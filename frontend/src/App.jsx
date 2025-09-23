@@ -1,46 +1,25 @@
-import React, { useState, useEffect } from 'react'
+import React from 'react'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
 import Home from './pages/Home'
+import Terms from './pages/Terms'
+import Privacy from './pages/Privacy'
 
 function App() {
-
-  const [currentPage, setCurrentPage] = useState('login')
-
-  // Simple routing based on URL hash
-  useEffect(() => {
-    const handleHashChange = () => {
-      const hash = window.location.hash.slice(1) || 'login'
-      setCurrentPage(hash)
-    }
-
-    // Set initial page
-    handleHashChange()
-
-    // Listen for hash changes
-    window.addEventListener('hashchange', handleHashChange)
-
-    return () => {
-      window.removeEventListener('hashchange', handleHashChange)
-    }
-  }, [])
-
-  const renderPage = () => {
-    switch (currentPage) {
-      case 'signup':
-        return <Signup />
-      case 'home':
-        return <Home />
-      case 'login':
-      default:
-        return <Login />
-    }
-  }
-
   return (
-    <div className="App">
-      {renderPage()}
-    </div>
+    <Router>
+      <div className="App">
+        <Routes>
+          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/home" element={<Home />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/privacy" element={<Privacy />} />
+        </Routes>
+      </div>
+    </Router>
   )
 }
 

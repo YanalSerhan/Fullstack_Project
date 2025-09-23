@@ -1,7 +1,9 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "./login.css";
 
 const Login = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -68,7 +70,7 @@ const Login = () => {
         }
 
         // Redirect to home page
-        window.location.href = "#home";
+        navigate("/home");
       } else {
         setError(data.error || "Login failed. Please try again.");
       }
@@ -95,7 +97,7 @@ const Login = () => {
     localStorage.setItem("auth", JSON.stringify({ isGuest: true }));
     // אופציונלי: דגל גלובלי לזיהוי ב-axios
     localStorage.setItem("X_GUEST", "1");
-    window.location.href = "#home"; // דף הבית/האפליקציה
+    navigate("/home"); // דף הבית/האפליקציה
   };
 
   if (showForgotPassword) {
@@ -233,7 +235,7 @@ const Login = () => {
 
           <div className="login-footer">
             <p>
-              Don't have an account? <a href="#signup">Sign up</a>
+              Don't have an account? <a href="/signup">Sign up</a>
             </p>
           </div>
         </div>
