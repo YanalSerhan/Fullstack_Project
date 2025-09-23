@@ -1,7 +1,9 @@
 import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import "./signup.css";
 
 const Signup = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -106,7 +108,7 @@ const Signup = () => {
 
         // Redirect to home page after 2 seconds
         setTimeout(() => {
-          window.location.href = "#home";
+          navigate("/home");
         }, 2000);
       } else {
         setError(data.error || "Registration failed. Please try again.");
@@ -220,8 +222,8 @@ const Signup = () => {
                 required
               />
               <label htmlFor="agreeToTerms">
-                I agree to the <a href="#">Terms and Conditions</a> and{" "}
-                <a href="#">Privacy Policy</a>
+                I agree to the <Link to="/terms">Terms and Conditions</Link> and{" "}
+                <Link to="/privacy">Privacy Policy</Link>
               </label>
             </div>
 
@@ -247,7 +249,7 @@ const Signup = () => {
 
           <div className="signup-footer">
             <p>
-              Already have an account? <a href="#login">Sign in</a>
+              Already have an account? <a href="/login">Sign in</a>
             </p>
           </div>
         </div>
