@@ -3,11 +3,17 @@ import { addHistoryEntry } from "../services/historyServices.js";
 
 export async function handleRunQuery(req, res) {
   try {
-    const { sql, params, userID, prompt } = req.body;
-    if (!sql) return res.status(400).json({ error: "SQL query is required" });
+    const { sql, params, prompt } = req.body;
+    const userID = req.user?.id; // Get user ID from authenticated user
+    
+    if (!sql) return res.status(400).json({ 
+      success: false,
+      error: "SQL query is required" 
+    });
 
     const result = await runQuery(sql, params || []);
-    // Best-effort: save successful executions to history if userID provided
+    
+    // Save successful executions to history if user is authenticated
     if (userID) {
       const promptForHistory = prompt && String(prompt).trim().length > 0 ? prompt : sql;
       try {
@@ -17,16 +23,25 @@ export async function handleRunQuery(req, res) {
       }
     }
 
-    res.json({ result });
+    res.json({ 
+      success: true,
+      result 
+    });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ 
+      success: false,
+      error: err.message 
+    });
   }
 }
 
 export async function exportQueryAsCSV(req, res) {
   try {
-    const sql = req.query?.sql || req.body?.sql; // accept query or body
-    if (!sql) return res.status(400).json({ error: "SQL query is required" });
+    const sql = req.query?.sql || req.body?.sql;
+    if (!sql) return res.status(400).json({ 
+      success: false,
+      error: "SQL query is required" 
+    });
 
     res.setHeader("Content-Type", "text/csv; charset=utf-8");
     res.setHeader("Content-Disposition", 'attachment; filename="result.csv"');
@@ -34,7 +49,10 @@ export async function exportQueryAsCSV(req, res) {
     await streamQuery(sql, res, { format: "csv" });
     if (!res.writableEnded) res.end();
   } catch (err) {
-    if (!res.headersSent) return res.status(500).json({ error: err.message });
+    if (!res.headersSent) return res.status(500).json({ 
+      success: false,
+      error: err.message 
+    });
     try {
       res.end();
     } catch (_) {}
@@ -43,8 +61,11 @@ export async function exportQueryAsCSV(req, res) {
 
 export async function exportQueryAsJSON(req, res) {
   try {
-    const sql = req.query?.sql || req.body?.sql; // accept query or body
-    if (!sql) return res.status(400).json({ error: "SQL query is required" });
+    const sql = req.query?.sql || req.body?.sql;
+    if (!sql) return res.status(400).json({ 
+      success: false,
+      error: "SQL query is required" 
+    });
 
     res.setHeader("Content-Type", "application/json; charset=utf-8");
     res.setHeader("Content-Disposition", 'attachment; filename="result.json"');
@@ -52,7 +73,10 @@ export async function exportQueryAsJSON(req, res) {
     await streamQuery(sql, res, { format: "json" });
     if (!res.writableEnded) res.end();
   } catch (err) {
-    if (!res.headersSent) return res.status(500).json({ error: err.message });
+    if (!res.headersSent) return res.status(500).json({ 
+      success: false,
+      error: err.message 
+    });
     try {
       res.end();
     } catch (_) {}

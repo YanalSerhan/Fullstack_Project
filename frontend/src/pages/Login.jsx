@@ -57,6 +57,7 @@ const Login = () => {
           lastName: data.user.lastName,
           email: data.user.email,
           rememberMe: formData.rememberMe,
+          userToken: data.token,
         };
 
         if (formData.rememberMe) {

@@ -93,6 +93,7 @@ const Home = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${user.userToken}`,  // 👈 required for auth
         },
         body: JSON.stringify({ sql: sqlQuery, params: [], userID: user.userId, prompt }), // include userID and prompt
       });
@@ -283,6 +284,7 @@ const Home = () => {
           {/* ✅ HistoryPanel wired with handleSelectHistory */}
           <HistoryPanel
             userId={user?.userId}
+            userToken={user?.userToken}
             onSelectHistory={handleSelectHistory}
             refreshKey={historyRefreshKey}
           />

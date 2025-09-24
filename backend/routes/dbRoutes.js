@@ -6,11 +6,17 @@ import {
   resetDbFile,
 } from "../controllers/dbController.js";
 import {upload} from "../middleware/uploadConfig.js";
+import { uploadLimiter, generalLimiter } from "../middleware/security.js";
+import { sanitizeInput } from "../middleware/validation.js";
 
 const router = express.Router();
 
-// POST /api/db/upload
-router.post("/upload", upload.single("dbfile"), uploadDbFile);
+// Apply rate limiting and input sanitization to all routes
+router.use(generalLimiter);
+router.use(sanitizeInput);
+
+// POST /api/db/upload - with upload rate limiting
+router.post("/upload", uploadLimiter, upload.single("dbfile"), uploadDbFile);
 
 // GET /api/db/schema
 router.get("/schema", getDbSchema);

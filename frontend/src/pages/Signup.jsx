@@ -90,7 +90,6 @@ const Signup = () => {
       });
 
       const data = await response.json();
-
       if (data.success) {
         // Store user data
         const userData = {
@@ -99,6 +98,7 @@ const Signup = () => {
           lastName: data.user.lastName,
           email: data.user.email,
           createdAt: new Date().toISOString(),
+          userToken: data.token,
         };
 
         localStorage.setItem("user", JSON.stringify(userData));

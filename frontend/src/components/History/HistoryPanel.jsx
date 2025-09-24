@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import "./HistoryPanel.css";
 
-const HistoryPanel = ({ userId, onSelectHistory, refreshKey }) => {
+const HistoryPanel = ({ userId, userToken, onSelectHistory, refreshKey }) => {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -17,7 +17,13 @@ const HistoryPanel = ({ userId, onSelectHistory, refreshKey }) => {
     setError(null);
 
     try {
-      const res = await fetch(`http://localhost:3000/api/history/${userId}`);
+      const res = await fetch(`http://localhost:3000/api/history/${userId}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${userToken}`,  // 👈 required for auth
+        },
+      });
       if (!res.ok) throw new Error("Failed to fetch history");
 
       const data = await res.json();
@@ -59,7 +65,9 @@ const HistoryPanel = ({ userId, onSelectHistory, refreshKey }) => {
     try {
       const res = await fetch(`http://localhost:3000/api/history/${id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json",
+          "Authorization": `Bearer ${userToken}`,  // 👈 required for auth
+         },
         body: JSON.stringify({
           userID: userId,
           prompt: newPrompt,
@@ -88,7 +96,9 @@ const HistoryPanel = ({ userId, onSelectHistory, refreshKey }) => {
     try {
       const res = await fetch(`http://localhost:3000/api/history/${id}`, {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json",
+          "Authorization": `Bearer ${userToken}`,  // 👈 required for auth
+         },
         body: JSON.stringify({ userID: userId }),
       });
       if (!res.ok) throw new Error("Failed to delete history item");

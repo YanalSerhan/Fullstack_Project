@@ -9,6 +9,8 @@ import express from 'express';
 import fs from "fs";
 import path from "path";
 import cors from "cors";
+import session from 'express-session';
+import { securityHeaders, generalLimiter } from './backend/middleware/security.js';
 
 function cleanupUploads() {
   const uploadDir = path.join(process.cwd(), "uploads");
@@ -39,14 +41,50 @@ function cleanupUploads() {
 
 dotenv.config();
 const app = express();
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(cors({ origin: "http://localhost:5173", credentials: true }));
+
+// Security middleware (order matters!)
+app.use(securityHeaders);
+app.use(generalLimiter);
+
+// CORS configuration with security
+app.use(cors({ 
+  origin: process.env.FRONTEND_URL || "http://localhost:5173", 
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// Body parsing with limits
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Session configuration for additional security
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'fallback-secret-change-in-production',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+    httpOnly: true, // Prevent XSS attacks
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
+}));
+
+// API routes
 app.use('/api/users', userRoutes);
 app.use('/api/queries', queryRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/history', historyRoutes);
 app.use("/api/db", dbRouter);
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
 
 // Connect to the database when the server starts
 connectDB();
