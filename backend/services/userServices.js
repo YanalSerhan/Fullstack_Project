@@ -34,3 +34,53 @@ export async function loginUser(email, password) {
     
     return user;
 }
+
+export async function changePassword(userId, currentPassword, newPassword) {
+    const user = await User.findById(userId);
+    if (!user || !user.password) {
+        throw new Error("User not found or no password set");
+    }
+    
+    // Verify current password
+    const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
+    if (!isCurrentPasswordValid) {
+        throw new Error("Current password is incorrect");
+    }
+    
+    // Hash new password
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+    
+    // Update password
+    await User.findByIdAndUpdate(userId, { password: hashedNewPassword });
+    return true;
+}
+
+export async function updateUserProfile(userId, updateData) {
+    const allowedFields = ['firstName', 'lastName', 'email'];
+    const filteredData = {};
+    
+    for (const field of allowedFields) {
+        if (updateData[field] !== undefined) {
+            filteredData[field] = updateData[field];
+        }
+    }
+    
+    if (Object.keys(filteredData).length === 0) {
+        throw new Error("No valid fields to update");
+    }
+    
+    const user = await User.findByIdAndUpdate(userId, filteredData, { new: true });
+    if (!user) {
+        throw new Error("User not found");
+    }
+    
+    return user;
+}
+
+export async function getUserById(userId) {
+    const user = await User.findById(userId);
+    if (!user) {
+        throw new Error("User not found");
+    }
+    return user;
+}

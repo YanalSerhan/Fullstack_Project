@@ -61,6 +61,22 @@ body {
   border: 1px solid rgba(255, 193, 7, 0.3);
 }
 
+.settings-btn {
+  background: #6366f1;
+  border: none;
+  padding: 0.5rem 1rem;
+  color: #fff;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-size: 0.9rem;
+}
+
+.settings-btn:hover {
+  background: #4f46e5;
+}
+
 .logout-btn {
   background: #ef4444;
   border: none;

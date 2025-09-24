@@ -294,6 +294,14 @@ const Home = () => {
                 : user.email || user.userId || "Guest"}
               !
             </span>
+            {!auth?.isGuest && (
+              <button 
+                onClick={() => window.location.href = "#settings"} 
+                className="settings-btn"
+              >
+                ⚙️ Settings
+              </button>
+            )}
             <button onClick={handleLogout} className="logout-btn">
               Logout
             </button>

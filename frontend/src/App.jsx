@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
 import Home from './pages/Home'
+import Settings from './pages/Settings'
 
 function App() {
 
@@ -31,6 +32,8 @@ function App() {
         return <Signup />
       case 'home':
         return <Home />
+      case 'settings':
+        return <Settings />
       case 'login':
       default:
         return <Login />
