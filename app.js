@@ -5,6 +5,7 @@ import dbRouter from "./backend/routes/dbRoutes.js";
 import { connectDB, disconnectDB } from './backend/middleware/db.js';
 import userRoutes from "./backend/routes/userRoutes.js";
 import googleAuthRoutes from "./backend/routes/googleAuthRoutes.js";
+import authRoutes from "./backend/routes/authRoutes.js";
 import { detectGuest } from './backend/middleware/auth.js';
 import express from 'express';
 import fs from "fs";
@@ -73,6 +74,7 @@ app.use(detectGuest);
 // Routes
 app.use('/api/users', userRoutes);
 app.use('/api/auth', googleAuthRoutes);
+app.use('/api/auth', authRoutes);
 app.use('/api/queries', queryRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/history', historyRoutes);

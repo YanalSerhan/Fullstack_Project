@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { getAuth } from "../../auth";
 import "./HistoryPanel.css";
 
 const HistoryPanel = ({ userId, onSelectHistory, refreshKey }) => {
@@ -12,32 +11,15 @@ const HistoryPanel = ({ userId, onSelectHistory, refreshKey }) => {
   const [editSql, setEditSql] = useState("");
   const [showConfirmClearAll, setShowConfirmClearAll] = useState(false);
   const [toast, setToast] = useState(null);
-  const [openMenuId, setOpenMenuId] = useState(null);
-  const [explainModal, setExplainModal] = useState(null);
-
-  const { isGuest } = getAuth();
-
+  const [explanation, setExplanation] = useState(null);
+  const [explainingId, setExplainingId] = useState(null);
 
   const fetchHistory = async () => {
-    if (isGuest) {
-      setHistory([]);
-      return;
-    }
-
     setLoading(true);
     setError(null);
 
     try {
-      const headers = {};
-      
-      // Add X-Guest header if user is guest
-      if (isGuest) {
-        headers["X-Guest"] = "true";
-      }
-
-      const res = await fetch(`http://localhost:3000/api/history/${userId}`, {
-        headers
-      });
+      const res = await fetch(`http://localhost:3000/api/history/${userId}`);
       if (!res.ok) throw new Error("Failed to fetch history");
 
       const data = await res.json();
@@ -51,9 +33,9 @@ const HistoryPanel = ({ userId, onSelectHistory, refreshKey }) => {
 
   // called when userId changes or on initial render because of [userId] at the end
   useEffect(() => {
-    if (!userId || isGuest) return;
+    if (!userId) return;
     fetchHistory();
-  }, [userId, refreshKey, isGuest]);
+  }, [userId, refreshKey]);
 
   // item is history object it has _id, prompt, sql, userID
   const handleClick = (item) => {
@@ -138,21 +120,29 @@ const HistoryPanel = ({ userId, onSelectHistory, refreshKey }) => {
     setTimeout(() => setToast(null), 3000); // auto-hide after 3s
   };
 
-  const handleExplain = async (sql) => {
+  const explainSQL = async (sql, itemId) => {
     try {
+      setExplainingId(itemId);
       const res = await fetch("http://localhost:3000/api/ai/explain", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sql }),
       });
-      if (!res.ok) throw new Error("Failed to explain SQL");
+      
+      if (!res.ok) throw new Error("Failed to get explanation");
+      
       const data = await res.json();
-      const explanation = data.explanation || "No explanation available.";
-      setExplainModal(explanation);
+      setExplanation({ id: itemId, explanation: data.explanation });
     } catch (err) {
       setError(err.message);
-      showToast("Failed to explain SQL ❌", "error");
+      showToast("Failed to get SQL explanation ❌", "error");
+    } finally {
+      setExplainingId(null);
     }
+  };
+
+  const closeExplanation = () => {
+    setExplanation(null);
   };
 
   return (
@@ -160,54 +150,40 @@ const HistoryPanel = ({ userId, onSelectHistory, refreshKey }) => {
       <div className="history-header">
         <h2 className="history-title">History</h2>
 
-        {!isGuest && (
-          <button
-            className="clear-history-button"
-            onClick={handleClearAll}
-            disabled={history.length === 0}
-          >
-            Clear All
-          </button>
-        )}
+        {/* Clear all - Only enable button if there is history */}
+        <button
+          className="clear-history-button"
+          onClick={handleClearAll}
+          disabled={history.length === 0}
+        >
+          Clear All
+        </button>
       </div>
 
-      {isGuest ? (
-        <div className="empty-state">
-          <h3>History</h3>
-          <p>
-            Please <a href="#login">Login</a> to see history.
-          </p>
-        </div>
-      ) : (
-        <>
-          {loading && <p className="history-loading">Loading...</p>}
-          {error && <p className="history-error">{error}</p>}
-          {!loading && history.length === 0 && (
-            <p className="history-empty">No history yet</p>
-          )}
-        </>
+      {loading && <p className="history-loading">Loading...</p>}
+      {error && <p className="history-error">{error}</p>}
+      {!loading && history.length === 0 && (
+        <p className="history-empty">No history yet</p>
       )}
 
-      {!isGuest && (
-        <>
-          {/*
-          <ul className="history-list">
-            {history.map((item) => (
-              <li
-                key={item._id}
-                onClick={() => handleClick(item)}
-                className={`history-item ${
-                  selectedId === item._id ? "selected" : ""
-                }`}
-              >
-                <p className="history-prompt">{item.prompt}</p>
-                <p className="history-sql">{item.sql}</p>
-              </li>
-            ))}
-          </ul> 
-          */}
+      {/*
+      <ul className="history-list">
+        {history.map((item) => (
+          <li
+            key={item._id}
+            onClick={() => handleClick(item)}
+            className={`history-item ${
+              selectedId === item._id ? "selected" : ""
+            }`}
+          >
+            <p className="history-prompt">{item.prompt}</p>
+            <p className="history-sql">{item.sql}</p>
+          </li>
+        ))}
+      </ul> 
+      */}
 
-          {showConfirmClearAll && (
+      {showConfirmClearAll && (
         <div className="confirm-overlay">
           <div className="confirm-modal">
             <h3>Clear All History</h3>
@@ -305,48 +281,35 @@ const HistoryPanel = ({ userId, onSelectHistory, refreshKey }) => {
               >
                 <p className="history-prompt">{item.prompt}</p>
                 <div className="history-item-actions">
-                  <div className="history-action-menu">
-                    <button
-                      className="history-action-trigger"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setOpenMenuId((prev) => (prev === item._id ? null : item._id));
-                      }}
-                    >
-                      Actions ▾
-                    </button>
-                    {openMenuId === item._id && (
-                      <div className="history-action-dropdown" onClick={(e) => e.stopPropagation()}>
-                        <button
-                          className="history-action-item"
-                          onClick={() => {
-                            setOpenMenuId(null);
-                            startEditing(item);
-                          }}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          className="history-action-item"
-                          onClick={() => {
-                            setOpenMenuId(null);
-                            handleExplain(item.sql);
-                          }}
-                        >
-                          Explain SQL
-                        </button>
-                        <button
-                          className="history-action-item danger"
-                          onClick={() => {
-                            setOpenMenuId(null);
-                            handleDelete(item._id);
-                          }}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    )}
-                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      explainSQL(item.sql, item._id);
+                    }}
+                    className="history-explain-button"
+                    title="Explain SQL"
+                    disabled={explainingId === item._id}
+                  >
+                    {explainingId === item._id ? "..." : "?"}
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      startEditing(item);
+                    }}
+                    className="history-edit-button"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(item._id);
+                    }}
+                    className="history-delete-button"
+                  >
+                    Delete
+                  </button>
                 </div>
               </div>
             )}
@@ -354,26 +317,31 @@ const HistoryPanel = ({ userId, onSelectHistory, refreshKey }) => {
         ))}
       </ul>
 
-      {/* Modern modal for Explain SQL */}
-      {explainModal && (
-        <div className="modal-overlay">
-          <div className="modal">
-            <h3>SQL Explanation</h3>
-            <div className="modal-body">
-              <p>{explainModal}</p>
+      {/* SQL Explanation Modal */}
+      {explanation && (
+        <div className="explanation-overlay">
+          <div className="explanation-modal">
+            <div className="explanation-header">
+              <h3>SQL Explanation</h3>
+              <button
+                className="explanation-close-button"
+                onClick={closeExplanation}
+              >
+                ×
+              </button>
             </div>
-            <button
-              className="modal-close"
-              onClick={() => setExplainModal(null)}
-            >
-              Close
-            </button>
+            <div className="explanation-content">
+              <p>{explanation.explanation}</p>
+            </div>
           </div>
-          </div>
-        )}
-        </>
+        </div>
       )}
 
+      {toast && (
+        <div className={`toast ${toast.type}`}>
+          <p>{toast.message}</p>
+        </div>
+      )}
     </div>
   );
 };
